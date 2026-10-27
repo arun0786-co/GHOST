@@ -1,0 +1,19 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "ghost"
+version = "0.1.0"
+description = "General-purpose Human-Owned Offline System Twin: a private, local-first index of your own files and notes"
+readme = "README.md"
+requires-python = ">=3.11"
+authors = [{ name = "Arun" }]
+# standard library only, on purpose: nothing to download, nothing that phones home.
+dependencies = []
+
+[project.scripts]
+ghost = "ghost.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]

@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from support import GhostTestCase
+from support import GhostTestCase, fake
 
 from ghost import notes
 from ghost.util import GhostError
@@ -45,3 +45,36 @@ class NoteFileTests(GhostTestCase):
         )
         self.assertEqual(len(notes.recent(folder, limit=2)), 2)
         self.assertEqual(notes.recent(self.home / "missing"), [])
+
+
+class RememberTests(GhostTestCase):
+    def test_remember_then_find_list_and_see_it(self):
+        self.assertIn("saved to ~/.ghost/notes/", self.ok("remember", "the", "spare key is with Sam"))
+        self.ok("remember", "--todo", "renew the passport")
+        self.assertIn("spare key is with Sam", self.ok("search", "spare", "key"))
+        listed = self.ok("notes")
+        self.assertIn("[ ] renew the passport", listed)
+        self.assertIn("the spare key is with Sam", listed)
+        self.assertIn("renew the passport", self.ok("todo"))
+        line = self.ok("timeline")
+        self.assertIn("note     the spare key is with Sam", line)
+        self.assertIn("task     renew the passport", line)
+        self.assertIn("notes", self.ok("sources"))
+
+    def test_secrets_are_kept_in_the_note_but_not_in_the_index_or_timeline(self):
+        secret = fake("sk", "-", "abc123" * 5)
+        self.ok("remember", f"api key {secret}")
+        self.assertIn(secret, next((self.ghost_home / "notes").glob("*.md")).read_text())
+        self.assertNotIn(secret, self.ok("search", "api", "key"))
+        self.assertNotIn(secret, self.ok("timeline"))
+
+    def test_a_user_folder_called_notes_keeps_its_name(self):
+        self.write("notes/mine.md", "my own notes")
+        self.ok("add", str(self.home / "notes"))
+        self.ok("remember", "hello there")
+        out = self.ok("sources")
+        self.assertIn("ghost-notes", out)
+        self.assertIn("~/notes", out)
+
+    def test_no_notes_yet(self):
+        self.assertIn("no notes yet", self.ok("notes"))

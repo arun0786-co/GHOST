@@ -1,5 +1,7 @@
 import unittest
-from datetime import datetime
+from datetime import datetime, timedelta
+
+from support import GhostTestCase
 
 from ghost import timeline
 from ghost.util import GhostError, parse_day, parse_since
@@ -61,3 +63,25 @@ class TimeParsingTests(unittest.TestCase):
         for text in ("soon", "mo", "3 years", "2026-13-01"):
             with self.subTest(text=text), self.assertRaises(GhostError):
                 parse_since(text, self.now)
+
+
+class TimelineCommandTests(GhostTestCase):
+    def test_changes_by_day(self):
+        recent = (datetime.now() - timedelta(hours=1)).replace(second=0, microsecond=0)
+        older = recent - timedelta(days=2)
+        for name in ("a", "b", "c"):
+            self.write(f"code/app/{name}.py", "x = 1\n", mtime=recent.timestamp())
+        self.write("code/docs/plan.md", "plan\n", mtime=older.timestamp())
+        self.ok("add", str(self.home / "code"))
+        out = self.ok("timeline", "--since", "7d")
+        self.assertIn(older.strftime("%a %d %b %Y").lower(), out)
+        self.assertIn(recent.strftime("%H:%M"), out)
+        self.assertIn("(+2 more in code/app)", out)
+        self.assertIn("code/docs/plan.md", out)
+
+        one_day = self.ok("timeline", "--day", older.strftime("%Y-%m-%d"))
+        self.assertIn("plan.md", one_day)
+        self.assertNotIn("code/app", one_day)
+
+        self.assertIn("older events are hidden", self.ok("timeline", "-n", "1"))
+        self.assertIn("nothing on the timeline", self.ok("timeline", "--since", "1m"))

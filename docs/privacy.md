@@ -29,12 +29,13 @@ GHOST makes no network connections except to a model server for `ghost ask` and 
 - `is_local` checks the url before anything connects, and a remote url in `config.toml` is an error.
 - Proxy settings from the environment are ignored, so a request cannot be sent through a proxy on another host.
 - Redirects are refused, so a local server cannot pass a request on.
+- Ollama's cloud models are never used. Ollama lists them like local models but passes their prompts on to another host (the model's `remote_host`, ollama.com for Ollama's own cloud). GHOST skips any model listed with a remote host or named with a `cloud` tag (`gemma4:cloud`, `gpt-oss:120b-cloud`), and refuses one named in `config.toml` or with `--model`.
 
 The test suite replaces `socket.connect` with a version that fails the test on any address that is not loopback, so every test checks this rule too.
 
 ## What a model sees
 
-For `ghost ask`: today's date, your question, and up to 6 passages (about 7000 characters, already redacted) with their paths and file dates. They go to the local model server and nowhere else. The model server is a separate program, so check what it logs or keeps. GHOST itself does not store questions or answers.
+For `ghost ask`: today's date, your question, and up to 6 passages (about 7000 characters, already redacted) with their paths and file dates. GHOST sends them to the local model server and nowhere else. The model server is a separate program, so check what it logs, keeps or passes on: GHOST refuses Ollama's cloud models, but cannot see what another server does with a request, for example a local proxy for a hosted API. Ollama can be kept local only with `OLLAMA_NO_CLOUD=1`, or `"disable_ollama_cloud": true` in `~/.ollama/server.json` ([Ollama FAQ](https://docs.ollama.com/faq)). GHOST itself does not store questions or answers.
 
 ## Forgetting
 

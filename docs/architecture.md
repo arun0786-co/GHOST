@@ -72,6 +72,8 @@ Ranking is bm25 with weights 1 for `text`, 2 for `heading` and 2 for `place`, so
 
 The model client (`model.py`) speaks two APIs: Ollama's (`/api/tags`, `/api/show`, `/api/chat`, newline-delimited JSON) and the OpenAI-style one that LM Studio, llama.cpp and others serve (`/v1/models`, `/v1/chat/completions`, server-sent events). Without a configured url it tries 127.0.0.1 on ports 11434, 1234 and 8080 in that order.
 
+Ollama's cloud models are skipped when a model is picked, and refused when one is asked for by name: [`/api/tags`](https://docs.ollama.com/api/tags) lists them with a `remote_host`, and their names carry a `cloud` tag. Ollama passes their prompts on to that host, so they would break the loopback-only rule from behind a loopback address.
+
 Ollama models that reason before answering are asked not to (`think: false`): the reasoning is never shown, and without it the answer starts sooner. `/api/show` lists the `think` values a model accepts, and `false` is sent only when it is one of them, or, where no values are listed (older servers, and models without that metadata), when the model has the `thinking` capability. A model with named levels instead of on and off keeps its default. See Ollama's [thinking docs](https://docs.ollama.com/capabilities/thinking).
 
 Every request goes through one opener with an empty `ProxyHandler` (proxy environment variables are ignored) and a redirect handler that refuses all redirects. `is_local` allows only `localhost` and loopback IP addresses, and is checked before any connection.

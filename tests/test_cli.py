@@ -148,3 +148,11 @@ class DoctorTests(GhostTestCase):
         self.assertIn(f"model qwen3:8b on the ollama at {server.url}", self.ok("doctor"))
         self.write_config('[model]\nurl = "http://example.com"\n')
         self.assertIn("FAIL  the model url http://example.com is not on this machine", self.fails("doctor"))
+
+    def test_doctor_does_not_count_cloud_models(self):
+        cloud = {"name": "gemma4:cloud", "remote_model": "gemma4", "remote_host": "https://ollama.com:443"}
+        server = self.fake_model(models=(cloud,))
+        self.write_config(f'[model]\nurl = "{server.url}"\n')
+        self.assertIn("has no local models yet", self.ok("doctor"))
+        self.write_config(f'[model]\nurl = "{server.url}"\nname = "gemma4:cloud"\n')
+        self.assertIn("FAIL  gemma4:cloud is an ollama cloud model", self.fails("doctor"))

@@ -65,6 +65,14 @@ class AskTests(GhostTestCase):
         self.assertIn("Rent is due on the 5th of every month.", sent)
         self.assertIn("Question: when is the rent due?", sent)
 
+    def test_a_cloud_model_is_never_sent_the_passages(self):
+        cloud = {"name": "gemma4:cloud", "remote_model": "gemma4", "remote_host": "https://ollama.com:443"}
+        server = self.fake_model(models=(cloud,))
+        self.write_config(f'[model]\nurl = "{server.url}"\n')
+        self.assertIn("has no local models", self.ok("ask", "when is the rent due?"))
+        self.assertIn("gemma4:cloud is an ollama cloud model", self.fails("ask", "--model", "gemma4:cloud", "when is the rent due?"))
+        self.assertEqual(server.chats(), [])
+
     def test_nothing_matches(self):
         self.assertIn("nothing in your sources matches", self.fails("ask", "zebras?"))
 

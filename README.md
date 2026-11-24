@@ -6,7 +6,7 @@
 
 GHOST reads the folders you point it at and the notes you give it, and keeps an index of them on your own computer. With that index you can search everything at once, ask questions that a model on the same computer answers from your own files, list the open tasks scattered through them, and see what changed when.
 
-Nothing leaves the machine. The only network connection GHOST makes is to a model server on a loopback address (127.0.0.1, ::1 or localhost), with proxies and redirects switched off. Everything it knows is in one folder, `~/.ghost`: delete that folder and it forgets everything. Your own files are only read, never changed.
+Nothing leaves the machine. The only network connection GHOST makes is to a model server on a loopback address (127.0.0.1, ::1 or localhost), with proxies and redirects switched off. Ollama's cloud models, whose prompts Ollama passes on to another host, are never used. Everything it knows is in one folder, `~/.ghost`: delete that folder and it forgets everything. Your own files are only read, never changed.
 
 It is a small Python command, `ghost`, for Python 3.11 or newer, standard library only. It was built and tested on macOS. It should work on Linux but has not been tried there.
 
@@ -89,7 +89,7 @@ GHOST sees changes when `ghost index` runs. Each change is placed at the time th
 PYTHONPATH=src python3 -m unittest discover -s tests -v
 ```
 
-97 tests, passing on Python 3.11.9, 3.12.13, 3.13.1 and 3.14.2 on macOS. They use temporary folders and fake model servers on 127.0.0.1, and any test that tries to connect to another host fails.
+101 tests, passing on Python 3.11.9, 3.12.13, 3.13.1 and 3.14.2 on macOS. They use temporary folders and fake model servers on 127.0.0.1, and any test that tries to connect to another host fails.
 
 ## Files
 

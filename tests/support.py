@@ -121,7 +121,7 @@ class FakeModel:
         self,
         api: str = "ollama",
         answer: str = "rent is due on the 5th [1]",
-        models: tuple[str, ...] = ("tiny:latest",),
+        models: tuple[str | dict, ...] = ("tiny:latest",),
         status: int = 200,
         error: str = "",
         redirect: str = "",
@@ -171,7 +171,8 @@ class FakeModel:
             handler.end_headers()
             return
         if path == "/api/tags" and self.api == "ollama":
-            return self.send(handler, 200, json.dumps({"models": [{"name": m} for m in self.models]}).encode())
+            listed = [m if isinstance(m, dict) else {"name": m} for m in self.models]
+            return self.send(handler, 200, json.dumps({"models": listed}).encode())
         if path == "/api/show" and self.api == "ollama":
             return self.send(handler, 200, json.dumps(self.show).encode())
         if path == "/v1/models" and self.api == "openai":

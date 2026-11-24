@@ -260,7 +260,7 @@ def cmd_ask(args: argparse.Namespace, config: Config) -> int:
             reason = (
                 "no model server found on this machine"
                 if server is None
-                else f"the {model.API_NAMES[server.api]} at {server.url} has no models"
+                else f"the {model.API_NAMES[server.api]} at {server.url} has no local models"
             )
             print(f"{reason} (ghost doctor says more), so here are the passages that match best:\n")
         for passage in found:

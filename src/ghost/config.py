@@ -18,7 +18,8 @@ DEFAULT_CONFIG = """\
 # another host. empty url = look for ollama (http://127.0.0.1:11434), then
 # lm studio (http://127.0.0.1:1234), then llama.cpp (http://127.0.0.1:8080).
 url = ""
-# empty name = the first model the server lists.
+# empty name = the first local model the server lists. ollama cloud models
+# are never used.
 name = ""
 # seconds to wait for the model before giving up.
 timeout = 300

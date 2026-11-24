@@ -109,6 +109,6 @@ def check_model(config: Config, add: Callable[[str, str], None]) -> None:
         where = config.model_url or "127.0.0.1:11434 (ollama), :1234 (lm studio) or :8080 (llama.cpp)"
         add(WARN, f"no model server at {where}. search, todo and timeline work without one; ghost ask needs one, for example ollama (https://ollama.com) and a model pulled with it")
     elif not found.name:
-        add(WARN, f"the {model.API_NAMES[found.api]} at {found.url} has no models yet")
+        add(WARN, f"the {model.API_NAMES[found.api]} at {found.url} has no local models yet")
     else:
         add(OK, f"model {found.name} on the {model.API_NAMES[found.api]} at {found.url}")

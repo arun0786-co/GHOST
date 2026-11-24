@@ -101,6 +101,24 @@ class ServerTests(GhostTestCase):
         answer = model.chat(model.Model("ollama", server.url, "tiny:latest"), self.messages, 5)
         self.assertEqual(answer, "rent is due on the 5th [1]")
 
+    def test_cloud_models_are_never_picked(self):
+        cloud = {"name": "gemma4:cloud", "remote_model": "gemma4", "remote_host": "https://ollama.com:443"}
+        server = self.fake_model(models=(cloud, "tiny:latest"))
+        self.assertEqual(model.find(server.url).name, "tiny:latest")
+        server = self.fake_model(models=(cloud,))
+        self.assertEqual(model.find(server.url).name, "")
+
+    def test_a_cloud_model_is_refused_even_when_asked_for(self):
+        cloud = {"name": "big:latest", "remote_model": "big", "remote_host": "https://ollama.com:443"}
+        server = self.fake_model(models=(cloud, "tiny:latest"))
+        # listed with a remote host, with or without its tag, or named with a cloud tag
+        for wanted in ("big", "big:latest", "gemma4:cloud", "gpt-oss:120b-cloud"):
+            with self.subTest(wanted=wanted):
+                with self.assertRaises(GhostError) as caught:
+                    model.find(server.url, wanted)
+                self.assertIn(f"{wanted} is an ollama cloud model", str(caught.exception))
+        self.assertEqual(server.chats(), [])
+
     def test_finds_and_streams_from_an_openai_style_server(self):
         server = self.fake_model(api="openai", answer="It is due on the 5th [1].", models=("local-model",))
         found = model.find(server.url + "/v1/", "local-model")

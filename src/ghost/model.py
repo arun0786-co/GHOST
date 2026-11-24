@@ -28,7 +28,7 @@ API_NAMES = {"ollama": "ollama", "openai": "openai-style server"}
 class Model:
     api: str  # "ollama" or "openai"
     url: str  # base url, without /v1
-    name: str  # "" when the server has no models
+    name: str  # "" when the server has no local models
     can_skip_thinking: bool = False  # an ollama model that reasons before answering unless told not to
 
 
@@ -90,6 +90,16 @@ def pick(names: list[str], wanted: str = "") -> str:
     return names[0] if names else ""
 
 
+def _cloud(name: str, listed: list[dict]) -> bool:
+    """whether ollama would send prompts for this model to another host: one listed
+    with a remote host, or one named with a cloud tag (gemma4:cloud, gpt-oss:120b-cloud)."""
+    full = name if ":" in name.rpartition("/")[2] else name + ":latest"
+    tag = full.rpartition(":")[2]
+    if tag == "cloud" or tag.endswith("-cloud"):
+        return True
+    return any(m["name"] == full and (m.get("remote_host") or m.get("remote_model")) for m in listed)
+
+
 def _can_skip_thinking(shown) -> bool:
     """whether ollama's /api/show describes a model that thinks first and accepts think: false."""
     if not isinstance(shown, dict):
@@ -109,7 +119,14 @@ def probe(base: str, wanted: str = "") -> Model | None:
     base = base.rstrip("/").removesuffix("/v1")
     tags = _fetch_json(base + "/api/tags")
     if isinstance(tags, dict) and isinstance(tags.get("models"), list):
-        name = pick([m.get("name", "") for m in tags["models"] if isinstance(m, dict)], wanted)
+        entries = [m for m in tags["models"] if isinstance(m, dict) and isinstance(m.get("name"), str)]
+        # a cloud model is listed like a local one, but ollama passes its prompts on to another host
+        name = pick([m["name"] for m in entries if not _cloud(m["name"], entries)], wanted)
+        if name and _cloud(name, entries):
+            raise GhostError(
+                f"{name} is an ollama cloud model: ollama would send your passages to another host. "
+                "ghost only uses models that run on this machine"
+            )
         shown = _fetch_json(base + "/api/show", {"model": name}) if name else None
         return Model("ollama", base, name, _can_skip_thinking(shown))
     listed = _fetch_json(base + "/v1/models")
@@ -223,7 +240,7 @@ def chat(
 ) -> str:
     """the model's answer. on_text gets each piece as it arrives."""
     if not model.name:
-        raise GhostError(f"the {API_NAMES[model.api]} at {model.url} has no models to use")
+        raise GhostError(f"the {API_NAMES[model.api]} at {model.url} has no local models to use")
     if model.api == "ollama":
         url, read = model.url + "/api/chat", _ollama_pieces
         body = {"model": model.name, "messages": messages, "stream": True, "options": {"temperature": 0.2, "num_ctx": 8192}}

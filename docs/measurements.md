@@ -31,8 +31,29 @@ Machine: Apple M4 Pro, 24 GB, macOS 15.7.7, Python 3.14.2, SQLite 3.51.1. Measur
 | database | 3.2 MB |
 | strings blanked | 6, all of them fake keys in test files |
 
+## Answers from a local model
+
+Measured on 2026-10-29 on the same machine, with Ollama 0.40.12 (the Homebrew cask `ollama-app`) and `qwen3.5:4b`. For this Mac Ollama pulled an MLX build: 4.5B parameters, nvfp4, 4.0 GB on disk. The test set is six short notes (a lease, car insurance, meeting minutes, a dentist appointment, a packing list, a recipe), six questions they answer and two they do not.
+
+| | |
+|---|---|
+| answerable questions answered right | 6 of 6 in each of 7 runs (42 of 42) |
+| the two questions the notes do not answer | declined in every run read in full (3 of 7), for example "The provided passages do not answer the question." |
+| answer present in the passages handed to the model | 6 of 6 |
+| first answer of the day, loading the model | 5.97 s to the first word, 6.23 s in all |
+| answers with the model loaded (final run) | 0.19 to 0.41 s to the first word, 0.57 to 1.26 s in all |
+| `ghost ask "when does the car insurance renew?"`, the whole command | 0.72 s |
+| generation speed on a 300-token answer | 28.7 tokens/s |
+| memory, from Ollama's `/api/ps` | 5.1 GB after the short answers, 7.6 GB after the thinking runs below |
+
+With thinking left on (the model's default), the first word came after 16.2 to 18.6 s instead of 0.10 to 0.16 s, for the same answers (two questions, two runs each). ghost turns thinking off for models that allow it.
+
+Before the prompt asked for plain text, 6 of 24 answers over three runs used markdown bold, which a terminal shows as asterisks. After, none of 32 answers over four runs did.
+
+Prompt reading speeds are left out: Ollama had cached the repeated prompts, so the numbers were not real.
+
 ## Not measured
 
-- Anything with a real model: answer quality, time to first token, tokens per second.
+- Other models and model servers (LM Studio, llama.cpp), and questions over real notes instead of the test set.
 - Sources much bigger than these, such as a whole home folder.
 - Linux.

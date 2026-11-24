@@ -4,7 +4,7 @@ What is known not to work, or not to work well yet.
 
 ## Not tried yet
 
-- **`ghost ask` with a real model.** The client is tested against fake Ollama and OpenAI-style servers on 127.0.0.1, including streaming, errors, redirects and proxies. No model server was installed on the machine it was built on, so answer quality, speed and how well models follow the citation instruction are unknown. Whether real Ollama models skip their reasoning when sent `think: false` is unknown too.
+- **Other models and model servers.** `ghost ask` has been tried with one model, `qwen3.5:4b` on Ollama 0.40.12, on a small test set (docs/measurements.md). LM Studio, llama.cpp and other models are only tested against fake servers, and answer quality on real notes is unknown.
 - **Linux.** Built and tested on macOS only. The code avoids macOS-only calls, and the timeline handles file systems without birth times, but nothing has run on Linux.
 
 ## Search

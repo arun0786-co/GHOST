@@ -29,7 +29,8 @@ STOPWORDS = frozenset(
 SYSTEM = (
     "You answer questions about the user's own files and notes, using only the numbered passages "
     "you are given. Cite the passages you use like [1] or [2][3]. If the passages do not answer the "
-    "question, say so plainly instead of guessing. Keep the answer short. Today is {today}."
+    "question, say so plainly instead of guessing. Keep the answer short and in plain text, without "
+    "markdown, because it is shown in a terminal. Today is {today}."
 )
 
 

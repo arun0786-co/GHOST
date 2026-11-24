@@ -16,6 +16,7 @@ class PromptTests(unittest.TestCase):
         system, user = ask.prompt("when is the rent due?", found, now=datetime(2026, 10, 27))
         self.assertIn("Today is Tuesday 27 October 2026", system["content"])
         self.assertIn("only the numbered passages", system["content"])
+        self.assertIn("plain text, without markdown", system["content"])
         self.assertIn("[1] /n/lease.md:3 (changed 1970-01-01)\nRent is due on the 5th.", user["content"])
         self.assertTrue(user["content"].endswith("Question: when is the rent due?"))
 

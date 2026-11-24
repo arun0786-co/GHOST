@@ -67,10 +67,12 @@ Ranking is bm25 with weights 1 for `text`, 2 for `heading` and 2 for `place`, so
 1. The question's words, minus English stopwords, are joined with OR.
 2. The best pieces are taken: at most 6, at most 2 from one file, about 7000 characters in all (around 2000 tokens, so small local models stay fast).
 3. The prompt has the date, numbered passages with their paths and file dates, and an instruction to answer only from them, cite them as `[n]`, and say so when they do not answer the question.
-4. The answer streams to the terminal. `<think>` blocks from reasoning models are dropped, also when a tag is split across two pieces of the stream.
+4. The answer streams to the terminal. `<think>` blocks from reasoning models are dropped, also when a tag is split across two pieces of the stream, and so is the reasoning Ollama sends separately in `message.thinking`.
 5. Only the passages the answer cites are listed under it, or all of them if it cites none.
 
-The model client (`model.py`) speaks two APIs: Ollama's (`/api/tags`, `/api/chat`, newline-delimited JSON) and the OpenAI-style one that LM Studio, llama.cpp and others serve (`/v1/models`, `/v1/chat/completions`, server-sent events). Without a configured url it tries 127.0.0.1 on ports 11434, 1234 and 8080 in that order.
+The model client (`model.py`) speaks two APIs: Ollama's (`/api/tags`, `/api/show`, `/api/chat`, newline-delimited JSON) and the OpenAI-style one that LM Studio, llama.cpp and others serve (`/v1/models`, `/v1/chat/completions`, server-sent events). Without a configured url it tries 127.0.0.1 on ports 11434, 1234 and 8080 in that order.
+
+Ollama models that reason before answering are asked not to (`think: false`): the reasoning is never shown, and without it the answer starts sooner. `/api/show` lists the `think` values a model accepts, and `false` is sent only when it is one of them, or, where no values are listed (older servers, and models without that metadata), when the model has the `thinking` capability. A model with named levels instead of on and off keeps its default. See Ollama's [thinking docs](https://docs.ollama.com/capabilities/thinking).
 
 Every request goes through one opener with an empty `ProxyHandler` (proxy environment variables are ignored) and a redirect handler that refuses all redirects. `is_local` allows only `localhost` and loopback IP addresses, and is checked before any connection.
 

@@ -89,7 +89,7 @@ GHOST sees changes when `ghost index` runs. Each change is placed at the time th
 PYTHONPATH=src python3 -m unittest discover -s tests -v
 ```
 
-94 tests, passing on Python 3.11.9, 3.13.1 and 3.14.2 on macOS. They use temporary folders and fake model servers on 127.0.0.1, and any test that tries to connect to another host fails.
+97 tests, passing on Python 3.11.9, 3.12.13, 3.13.1 and 3.14.2 on macOS. They use temporary folders and fake model servers on 127.0.0.1, and any test that tries to connect to another host fails.
 
 ## Files
 

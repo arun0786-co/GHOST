@@ -71,6 +71,36 @@ class ServerTests(GhostTestCase):
         body = server.chats()[0]
         self.assertEqual((body["model"], body["stream"], body["messages"]), ("tiny:latest", True, self.messages))
 
+    def test_models_that_can_skip_thinking_are_asked_to(self):
+        for show in (
+            {"capabilities": ["completion", "thinking"], "thinking": {"values": [False, True], "default": True}},
+            {"capabilities": ["completion", "thinking"]},  # an older server, or a model without the thinking metadata
+        ):
+            with self.subTest(show=show):
+                server = self.fake_model(show=show, answer="Rent is due on the 5th [1].")
+                found = model.find(server.url)
+                self.assertTrue(found.can_skip_thinking)
+                self.assertEqual(model.chat(found, self.messages, 5), "Rent is due on the 5th [1].")
+                self.assertIs(server.chats()[0]["think"], False)
+
+    def test_think_is_only_sent_where_false_is_accepted(self):
+        for show in (
+            {"capabilities": ["completion"]},
+            {"capabilities": ["completion"], "thinking": {"values": [False], "default": False}},
+            {"capabilities": ["completion", "thinking"], "thinking": {"values": ["low", "medium", "high"], "default": "medium"}},
+        ):
+            with self.subTest(show=show):
+                server = self.fake_model(show=show)
+                found = model.find(server.url)
+                self.assertFalse(found.can_skip_thinking)
+                self.assertEqual(model.chat(found, self.messages, 5), "rent is due on the 5th [1]")
+                self.assertNotIn("think", server.chats()[0])
+
+    def test_reasoning_that_still_arrives_is_not_shown(self):
+        server = self.fake_model(show={"capabilities": ["completion", "thinking"]})
+        answer = model.chat(model.Model("ollama", server.url, "tiny:latest"), self.messages, 5)
+        self.assertEqual(answer, "rent is due on the 5th [1]")
+
     def test_finds_and_streams_from_an_openai_style_server(self):
         server = self.fake_model(api="openai", answer="It is due on the 5th [1].", models=("local-model",))
         found = model.find(server.url + "/v1/", "local-model")

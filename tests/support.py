@@ -125,9 +125,13 @@ class FakeModel:
         status: int = 200,
         error: str = "",
         redirect: str = "",
+        show: dict | None = None,
     ):
         self.api, self.answer, self.models = api, answer, list(models)
         self.status, self.error, self.redirect = status, error, redirect
+        # what /api/show says about the model. one with the thinking capability streams
+        # reasoning in message.thinking unless the request says think: false
+        self.show = show or {"capabilities": ["completion"]}
         self.requests: list[tuple[str, str, object]] = []
         fake_server = self
 
@@ -168,13 +172,18 @@ class FakeModel:
             return
         if path == "/api/tags" and self.api == "ollama":
             return self.send(handler, 200, json.dumps({"models": [{"name": m} for m in self.models]}).encode())
+        if path == "/api/show" and self.api == "ollama":
+            return self.send(handler, 200, json.dumps(self.show).encode())
         if path == "/v1/models" and self.api == "openai":
             return self.send(handler, 200, json.dumps({"object": "list", "data": [{"id": m} for m in self.models]}).encode())
         if self.status != 200:
             return self.send(handler, self.status, json.dumps({"error": self.error}).encode())
         pieces = [self.answer[i : i + 4] for i in range(0, len(self.answer), 4)]
         if path == "/api/chat" and self.api == "ollama":
-            lines = [json.dumps({"message": {"role": "assistant", "content": p}, "done": False}) for p in pieces]
+            lines = []
+            if "thinking" in self.show.get("capabilities", []) and body.get("think") is not False:
+                lines.append(json.dumps({"message": {"role": "assistant", "content": "", "thinking": "REASONING"}, "done": False}))
+            lines += [json.dumps({"message": {"role": "assistant", "content": p}, "done": False}) for p in pieces]
             lines.append(json.dumps({"message": {"role": "assistant", "content": ""}, "done": True}))
             return self.send(handler, 200, ("\n".join(lines) + "\n").encode(), "application/x-ndjson")
         if path == "/v1/chat/completions" and self.api == "openai":
@@ -183,4 +192,4 @@ class FakeModel:
         self.send(handler, 404, json.dumps({"error": "not found"}).encode())
 
     def chats(self) -> list[dict]:
-        return [body for method, path, body in self.requests if method == "POST"]
+        return [body for _, path, body in self.requests if path in ("/api/chat", "/v1/chat/completions")]

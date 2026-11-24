@@ -29,6 +29,7 @@ class Model:
     api: str  # "ollama" or "openai"
     url: str  # base url, without /v1
     name: str  # "" when the server has no models
+    can_skip_thinking: bool = False  # an ollama model that reasons before answering unless told not to
 
 
 def is_local(url: str) -> bool:
@@ -67,9 +68,9 @@ def _open(url: str, body: dict | None, timeout: float):
     return _OPENER.open(request, timeout=timeout)
 
 
-def _get_json(url: str, timeout: float = PROBE_TIMEOUT):
+def _fetch_json(url: str, body: dict | None = None, timeout: float = PROBE_TIMEOUT):
     try:
-        with _open(url, None, timeout) as response:
+        with _open(url, body, timeout) as response:
             return json.loads(response.read())
     except urllib.error.HTTPError as exc:
         exc.close()
@@ -89,13 +90,29 @@ def pick(names: list[str], wanted: str = "") -> str:
     return names[0] if names else ""
 
 
+def _can_skip_thinking(shown) -> bool:
+    """whether ollama's /api/show describes a model that thinks first and accepts think: false."""
+    if not isinstance(shown, dict):
+        return False
+    controls = shown.get("thinking")
+    if isinstance(controls, dict) and isinstance(controls.get("values"), list):
+        # the think values the model accepts. [false] alone means it never thinks,
+        # and a model with named levels may not accept false at all
+        values = controls["values"]
+        return False in values and values != [False]
+    # older servers, and models without the thinking metadata, only list the capability
+    return "thinking" in (shown.get("capabilities") or [])
+
+
 def probe(base: str, wanted: str = "") -> Model | None:
     """which kind of server answers at base, and the model to use there."""
     base = base.rstrip("/").removesuffix("/v1")
-    tags = _get_json(base + "/api/tags")
+    tags = _fetch_json(base + "/api/tags")
     if isinstance(tags, dict) and isinstance(tags.get("models"), list):
-        return Model("ollama", base, pick([m.get("name", "") for m in tags["models"] if isinstance(m, dict)], wanted))
-    listed = _get_json(base + "/v1/models")
+        name = pick([m.get("name", "") for m in tags["models"] if isinstance(m, dict)], wanted)
+        shown = _fetch_json(base + "/api/show", {"model": name}) if name else None
+        return Model("ollama", base, name, _can_skip_thinking(shown))
+    listed = _fetch_json(base + "/v1/models")
     if isinstance(listed, dict) and isinstance(listed.get("data"), list):
         return Model("openai", base, pick([m.get("id", "") for m in listed["data"] if isinstance(m, dict)], wanted))
     return None
@@ -210,6 +227,9 @@ def chat(
     if model.api == "ollama":
         url, read = model.url + "/api/chat", _ollama_pieces
         body = {"model": model.name, "messages": messages, "stream": True, "options": {"temperature": 0.2, "num_ctx": 8192}}
+        if model.can_skip_thinking:
+            # ghost never shows the reasoning, so skip it and the answer starts sooner
+            body["think"] = False
     else:
         url, read = model.url + "/v1/chat/completions", _openai_pieces
         body = {"model": model.name, "messages": messages, "stream": True, "temperature": 0.2}

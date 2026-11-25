@@ -32,7 +32,7 @@ SCHEMA = """
 create table sources (
     id integer primary key,
     name text not null unique,
-    kind text not null,                 -- folder | notes
+    kind text not null,                 -- folder | notes | git
     path text not null,
     added_at real not null,
     indexed_at real
@@ -79,7 +79,7 @@ create index tasks_doc on tasks(doc_id);
 create table events (
     id integer primary key,
     at real not null,
-    kind text not null,                 -- created | edited | deleted | note | task
+    kind text not null,                 -- created | edited | deleted | note | task | commit
     source_id integer not null references sources(id) on delete cascade,
     path text not null,
     detail text not null default ''
@@ -235,6 +235,9 @@ class Store:
             "insert into events (at, kind, source_id, path, detail) values (?, ?, ?, ?, ?)",
             (at, kind, source.id, path, detail),
         )
+
+    def delete_events(self, source: Source, path: str) -> None:
+        self.db.execute("delete from events where source_id = ? and path = ?", (source.id, path))
 
     # reading
 

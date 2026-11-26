@@ -96,7 +96,8 @@ def check_source(source: Source, counts: tuple[int, int], add: Callable[[str, st
         add(WARN, f"{label} is not indexed yet. ghost index {source.name}")
         return
     files, tasks = counts
-    add(OK, f"{label}: {plural(files, 'file')}, {plural(tasks, 'open task')}, indexed {ago(source.indexed_at)}")
+    what = plural(files, "commit") if source.kind == "git" else f"{plural(files, 'file')}, {plural(tasks, 'open task')}"
+    add(OK, f"{label}: {what}, indexed {ago(source.indexed_at)}")
 
 
 def check_model(config: Config, add: Callable[[str, str], None]) -> None:

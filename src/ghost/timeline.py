@@ -24,6 +24,8 @@ class Line:
 
 def describe(row: Mapping) -> tuple[str, str]:
     """what to show for one event, and the folder it happened in."""
+    if row["kind"] == "commit":
+        return f"{row['source']}: {row['detail']}", ""
     if row["kind"] not in FILE_KINDS:
         return row["detail"], ""
     shown = f"{row['source']}/{os.path.relpath(row['path'], row['root'])}"

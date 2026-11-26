@@ -10,7 +10,7 @@ import time
 from pathlib import Path
 from typing import Callable, Sequence
 
-from . import __version__, ask, doctor, indexer, model, notes, search, timeline
+from . import __version__, ask, doctor, gitlog, indexer, model, notes, search, timeline
 from . import config as config_mod
 from .config import Config
 from .redact import redact
@@ -170,19 +170,23 @@ def cmd_add(args: argparse.Namespace, config: Config) -> int:
     home = config.home.expanduser().resolve()
     if path == home or home in path.parents:
         raise GhostError(f"{display_path(path)} is ghost's own folder")
-    name = args.name or re.sub(r"[^\w.-]+", "-", path.name).strip("-") or "folder"
+    if args.git:
+        path = Path(gitlog.top(str(path))).resolve()
+    name = args.name or (re.sub(r"[^\w.-]+", "-", path.name).strip("-") or "folder") + ("-git" if args.git else "")
     if not NAME.fullmatch(name):
         raise GhostError("a source name can only have letters, digits, '.', '-' and '_'")
     with open_store(config) as store:
         sources = store.sources()
         for other in sources:
-            if Path(other.path) == path:
+            if Path(other.path) == path and (other.kind == "git") == args.git:
                 raise GhostError(f"{display_path(path)} is already a source, called {other.name}")
             if other.name == name:
                 raise GhostError(f"there is already a source called {name} ({display_path(other.path)}). pick another name with --name")
-        source = store.add_source(name, "folder", str(path))
+        source = store.add_source(name, "git" if args.git else "folder", str(path))
         print(f"added {name}: {display_path(path)}")
         for other in sources:
+            if args.git or other.kind == "git":
+                continue
             if Path(other.path) in path.parents or path in Path(other.path).parents:
                 print(f"  it overlaps with {other.name} ({display_path(other.path)}), so some files are indexed twice")
         if args.no_index:
@@ -383,6 +387,7 @@ def build_parser() -> argparse.ArgumentParser:
     p = sub.add_parser("add", help="add a folder and index it")
     p.add_argument("path")
     p.add_argument("--name", help="what to call it (default: the folder's name)")
+    p.add_argument("--git", action="store_true", help="the commit messages of the git repository there, instead of its files")
     p.add_argument("--no-index", action="store_true", help="add it now, index it later")
 
     sub.add_parser("sources", help="the folders ghost reads")

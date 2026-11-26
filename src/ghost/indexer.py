@@ -12,7 +12,7 @@ import time
 from dataclasses import dataclass, field
 from typing import Callable, Sequence
 
-from . import chunks, files
+from . import chunks, files, gitlog
 from .config import Config
 from .redact import redact
 from .store import Source, Store
@@ -56,6 +56,9 @@ def index_source(
     if not os.path.isdir(source.path):
         # an unplugged drive should not wipe its index
         report.missing = True
+        return report
+    if source.kind == "git":
+        gitlog.index(store, source, report, now)
         return report
     rules = files.load_rules(source.path, config.skip, config.max_file_kb * 1024, config.extra_types)
     walk = files.WalkReport()

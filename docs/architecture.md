@@ -28,12 +28,12 @@ One SQLite file. `pragma user_version` holds the schema version. A newer databas
 
 | table | what it holds |
 |---|---|
-| `sources` | name, kind (`folder` or `notes`), path, when it was added and last indexed |
+| `sources` | name, kind (`folder`, `notes` or `git`), path, when it was added and last indexed |
 | `documents` | one row per indexed file: path, size, mtime, how many strings were blanked |
 | `chunks` | one row per piece: which document, first line |
 | `chunks_fts` | fts5 table with the same rowid as `chunks`: `text`, `heading` (the markdown heading above the piece), `place` (the path inside the source) |
 | `tasks` | open tasks: document, line, text |
-| `events` | the timeline: time, kind (`created`, `edited`, `deleted`, `note`, `task`), source, path, detail |
+| `events` | the timeline: time, kind (`created`, `edited`, `deleted`, `note`, `task`, `commit`), source, path, detail |
 
 Deleting a source cascades to its documents, chunks, tasks and events. A trigger removes the matching `chunks_fts` rows, also for rows the cascade deletes.
 
@@ -53,6 +53,12 @@ For each source, `indexer.index_source`:
 6. leaves a source alone when its folder is missing (an unplugged drive)
 
 Timeline events use file times. A new file gets `created` at its birth time where the file system has one (macOS), and `edited` at its mtime if that is more than a minute later. Without a birth time, the first run only records `edited`, because the creation time is unknown. Later runs record new files as `created` at their mtime. The notes source gets no file events: `ghost remember` writes its own `note` and `task` events with the note text.
+
+## Git history
+
+`ghost add --git` adds the commit messages of one repository. `gitlog.py` runs `git log` over the local branches and HEAD, and stores each message with the author's name as a document called `path@commit`, dated by the committer date. File contents and diffs are not read. Each run lists every commit but only stores the new ones. Commits no branch has any more (amended, rebased, deleted branch) leave the index and the timeline. If git fails, the index stays as it was.
+
+A repository's own settings can make git start programs, so `log.showSignature` is overridden, and `GIT_*` variables are removed. Fetching is refused (`GIT_ALLOW_PROTOCOL`, `GIT_NO_LAZY_FETCH`), because in a partial clone `git log` can otherwise contact the remote.
 
 ## Search
 

@@ -4,6 +4,8 @@
 
 Only the folders you add with `ghost add`, and its own notes folder. Inside them, only text files, minus everything listed under "What it reads" in the README: hidden files and folders, key and password files, dependency and build folders, lock and minified files, symlinks, binary files and files over the size limit. A `.ghostignore` file or `skip` in `config.toml` excludes more. If a `.ghostignore` exists but cannot be read, that source is not indexed at all, because indexing without it could pick up exactly what it was meant to keep out.
 
+With `ghost add --git`, the commit messages of that repository: messages, dates and author names, from everyone who committed there, but no file contents, diffs or author emails. An email written in a message (a co-author line, for example) is part of the message.
+
 Your files are opened read-only. GHOST writes only inside `~/.ghost` (or `GHOST_HOME`).
 
 ## What it stores
@@ -24,7 +26,7 @@ The redaction is pattern based. It misses formats it does not know, and password
 
 ## Network
 
-GHOST makes no network connections except to a model server for `ghost ask` and `ghost doctor`, and only to a loopback address (`localhost`, `127.0.0.0/8`, `::1`). This is enforced in `model.py`:
+Git is run with fetching switched off. GHOST makes no network connections except to a model server for `ghost ask` and `ghost doctor`, and only to a loopback address (`localhost`, `127.0.0.0/8`, `::1`). This is enforced in `model.py`:
 
 - `is_local` checks the url before anything connects, and a remote url in `config.toml` is an error.
 - Proxy settings from the environment are ignored, so a request cannot be sent through a proxy on another host.

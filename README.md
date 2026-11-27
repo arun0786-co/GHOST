@@ -17,11 +17,12 @@ It is a small Python command, `ghost`, for Python 3.11 or newer, standard librar
 | Local index: one SQLite file with full-text search | done |
 | Folders: index new, changed and deleted files, search them | done |
 | Notes you add (`ghost remember`), kept as plain markdown | done |
+| Git history: commit messages of a repository (`ghost add --git`) | done |
 | Open tasks from files and notes (`ghost todo`) | done |
 | Timeline of changes (`ghost timeline`) | done |
 | Secret-shaped strings blanked before anything is stored | done |
 | Answers from a local model (`ghost ask`) | done. Tried with qwen3.5:4b on Ollama: 6 of 6 test questions right, about a second per answer |
-| More sources: git history, shell history, browser history, calendar, mail | planned |
+| More sources: shell history, browser history, calendar, mail | planned |
 | Indexing in the background (launchd or a systemd timer) | planned |
 | Search by meaning (local embeddings) | planned |
 | Actions: drafts, reminders, follow-ups | planned |
@@ -48,6 +49,7 @@ Or set `[model] url` in `~/.ghost/config.toml`. Everything else works without a 
 ```bash
 ghost add ~/notes                         # add a folder and index it
 ghost add ~/code --name code
+ghost add --git ~/code/app                # the commit messages of a repository
 ghost index                               # pick up new, changed and deleted files
 ghost search lease rent                   # every word has to match
 ghost search '"due date"' invoi*          # phrases and prefixes
@@ -89,7 +91,7 @@ GHOST sees changes when `ghost index` runs. Each change is placed at the time th
 PYTHONPATH=src python3 -m unittest discover -s tests -v
 ```
 
-101 tests, passing on Python 3.11.9, 3.12.13, 3.13.1 and 3.14.2 on macOS. They use temporary folders and fake model servers on 127.0.0.1, and any test that tries to connect to another host fails.
+116 tests, passing on Python 3.11.15, 3.12.13, 3.13.1 and 3.14.2 on macOS. They use temporary folders and fake model servers on 127.0.0.1, and any test that tries to connect to another host fails.
 
 ## Files
 
@@ -101,6 +103,7 @@ src/ghost/
   files.py      which files to read, and the text in them
   chunks.py     cutting text into pieces, finding open tasks
   redact.py     blanking secret-shaped strings
+  gitlog.py     commit messages of a git repository
   indexer.py    bringing the index up to date
   search.py     turning words into queries
   ask.py        passages and the prompt for ghost ask

@@ -26,6 +26,13 @@ What is known not to work, or not to work well yet.
 - Birth times exist on macOS (and BSD). Elsewhere, files already there on the first run only have a last-edited time.
 - Git checkouts, copies and unpacked archives set file times, so a fresh clone looks like a burst of new files.
 
+## Git history
+
+- Local branches and HEAD only: no tags, stashes or remote branches.
+- Messages only, so a search does not find which commit touched a file.
+- A commit that was cherry-picked or rebased onto a second branch shows twice.
+- `ghost sources` counts commits in its files column, and search results say "changed" for the commit date.
+
 ## Tasks
 
 - A TODO inside a string, or a `- [ ]` line inside a code docstring, counts as a task.
